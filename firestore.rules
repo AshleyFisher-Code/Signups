@@ -1,0 +1,36 @@
+rules_version = '2';
+// Guests never write directly: every guest change goes through the Cloud Functions.
+// Only the host (listed below, same as functions/config.js) can create or edit sign-ups.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email != null
+        && request.auth.token.email.lower() in ['ashley@ashleyfisher.com'];
+    }
+    function owns(d) { return isAdmin() && d.ownerUid == request.auth.uid; }
+
+    match /signups/{id} {
+      allow get: if true;                       // anyone with the link can see the sign-up
+      allow list: if isAdmin();                 // nobody else can browse all sign-ups
+      allow create: if isAdmin() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if owns(resource.data) && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if owns(resource.data);
+
+      match /entries/{e} {                      // names and picks shown on the page (no emails)
+        allow read: if true;
+        allow write: if false;
+      }
+      match /private/{e} {                      // emails, answers, edit links: host only
+        allow read: if owns(get(/databases/$(database)/documents/signups/$(id)).data);
+        allow write: if false;
+      }
+    }
+    match /slugs/{slug} {
+      allow get: if true;
+      allow create: if isAdmin() && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if owns(resource.data);
+      allow update, list: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

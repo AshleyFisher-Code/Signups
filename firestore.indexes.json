@@ -1,0 +1,11 @@
+{
+  "indexes": [
+    { "collectionGroup": "signups", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "closesAt", "order": "ASCENDING" } ] },
+    { "collectionGroup": "signups", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "reminderSent", "order": "ASCENDING" }, { "fieldPath": "reminderAt", "order": "ASCENDING" } ] },
+    { "collectionGroup": "signups", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "ownerUid", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] }
+  ],
+  "fieldOverrides": []
+}

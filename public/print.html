@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Print</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  body { background: #fff; font-size: 15px; }
+  .page { max-width: 7.5in; margin: 0 auto; padding: 32px 20px; }
+  .page h1 { font-size: 38px; margin-bottom: 4px; }
+  .page .sub { color: #444; margin: 0 0 18px; }
+  table.p { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  table.p th { text-align: left; font: 700 11px/1.2 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); border-bottom: 2px solid var(--green); padding: 6px 8px; }
+  table.p td { border-bottom: 1px solid #D9D3C6; padding: 9px 8px; vertical-align: top; }
+  table.p td.blank { height: 30px; }
+  table.p tr.sec td { font: 700 12px/1.2 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--green); padding-top: 16px; border-bottom: 1px solid var(--green); }
+  table.p .c { text-align: center; }
+  .noprint { margin-bottom: 20px; display: flex; gap: 10px; }
+  @media print { .noprint { display: none; } .page { padding: 0; } @page { margin: .5in; } tr { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main id="app" class="page"><div class="loading"><div class="spinner"></div>Loading…</div></main>
+<script type="module" src="/js/print.js"></script>
+</body>
+</html>
