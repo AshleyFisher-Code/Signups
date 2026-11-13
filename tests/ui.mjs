@@ -261,10 +261,15 @@ await a.goto(`${BASE}/admin#/create/rsvp`);
 await a.getByLabel('Title').fill('Stars Team Dinner');
 await a.getByLabel('Location').fill('Pizzeria Paradiso');
 await a.getByLabel('Event date').fill('2026-11-15');
-await a.getByLabel('Starts').fill('18:00');
+await see(a, 'Add a start time (including AM/PM)');
 await a.getByLabel('Name question').fill('Player name');
-await a.getByLabel('Headcount question').fill('How many are coming, including the player?');
 await a.getByLabel('Sign-ups close').fill('2026-11-14');
+await btn(a, 'Create sign-up').click();
+await see(a, 'Please add a start time');
+assert.ok(a.url().includes('create'), 'refused to save without a time');
+await a.getByLabel('Starts').fill('18:00');
+await see(a, 'Calendar invites: Sunday, November 15 at 6');
+await a.getByLabel('Headcount question').fill('How many are coming, including the player?');
 await btn(a, 'Create sign-up').click();
 await a.waitForURL(/#\/s\//);
 await see(a, 'sign-ups');
@@ -290,7 +295,7 @@ mail = await outbox();
 const leo = mail.find(m => m.to[0] === 'leo.family@example.com');
 assert.match(icsOf(leo), /DTSTART:20261115T230000Z/);
 assert.match(leo.text, /4 people/);
-ok('RSVP: player name + headcount, running total, invite');
+ok('RSVP: refuses a date with no time (no more surprise all-day invites); headcount, total, timed invite');
 
 // ================= date poll =================
 await a.goto(`${BASE}/admin#/create/poll`);

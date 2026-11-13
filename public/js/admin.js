@@ -118,7 +118,7 @@ async function editor(id, newType) {
   const evEnd = ev.allDay ? { time: '' } : localParts(ev.end);
   const f = {
     title: orig?.title || '', slug: orig?.slug || '', slugTouched: !!orig, description: orig?.description || '', location: orig?.location || '',
-    hostName: orig?.hostName || HOST_NAME, date: evStart.date, start: evStart.time, end: evEnd.time,
+    hostName: orig?.hostName || HOST_NAME, date: evStart.date, start: evStart.time, end: evEnd.time, allDay: !!ev.allDay,
     closeDate: localParts(orig?.closesAt).date, closeTime: localParts(orig?.closesAt).time || '20:00',
     remindDays: orig?.remindDays ?? (type === 'poll' ? 0 : 1), showNames: orig?.showNames !== false, waitlist: orig?.waitlist !== false,
     itemsText: orig ? serializeItems(orig.items || []) : '',
@@ -179,6 +179,19 @@ async function editor(id, newType) {
     el('button', { type: 'button', class: 'btn small quiet', text: '+ Add a question', onclick: () => { f.questions.push({ id: newId(), label: '', required: false }); drawQs(); } }));
   drawQs();
 
+  // What the calendar invite will say, shown live so a half-typed time can't slip through.
+  const whenNote = el('div', { class: 'notice', style: 'margin:-6px 0 20px;font-size:17px' });
+  const timeRow = el('div', { class: 'row', style: f.allDay ? 'display:none' : '' },
+    fld('Starts', inp('start', { type: 'time', after: () => drawWhen() })), fld('Ends', inp('end', { type: 'time', after: () => drawWhen() })));
+  const drawWhen = () => {
+    if (!f.date) { whenNote.className = 'notice'; whenNote.textContent = ''; whenNote.style.display = 'none'; return; }
+    whenNote.style.display = '';
+    if (f.allDay) { whenNote.className = 'notice ok'; whenNote.textContent = `Calendar invites: all day ${fmtWhen({ allDay: true, start: f.date })}`; return; }
+    if (!f.start) { whenNote.className = 'notice warn'; whenNote.textContent = 'Add a start time (including AM/PM), or turn on All-day event.'; return; }
+    whenNote.className = 'notice ok';
+    whenNote.textContent = `Calendar invites: ${fmtWhen({ allDay: false, start: toIso(f.date, f.start), ...(f.end ? { end: toIso(f.date, f.end) } : {}) })}`;
+  };
+  drawWhen();
   const saveBtn = el('button', { class: 'btn block', text: id ? 'Save changes' : 'Create sign-up', onclick: () => save() });
   mount(app, top(id ? `#/s/${id}` : '#/new'),
     el('p', { class: 'eyebrow', text: TYPES[type][0] }), el('h1', { text: id ? 'Edit sign-up' : 'New sign-up' }),
@@ -187,8 +200,11 @@ async function editor(id, newType) {
     fld('Details for guests (optional)', el('textarea', { rows: 3, value: f.description, oninput: (e) => { f.description = e.target.value; } })),
     fld('Location (optional)', inp('location', { autocomplete: 'street-address' })),
     type !== 'poll' && el('div', {},
-      fld('Event date', inp('date', { type: 'date', after: () => type === 'items' && drawPreview() })),
-      el('div', { class: 'row' }, fld('Starts', inp('start', { type: 'time' })), fld('Ends', inp('end', { type: 'time' })))),
+      fld('Event date', inp('date', { type: 'date', after: () => { drawWhen(); if (type === 'items') drawPreview(); } })),
+      timeRow,
+      el('label', { class: 'switch', style: 'border-bottom:0;padding-top:0' }, el('span', { text: 'All-day event (no set time)' }),
+        el('input', { type: 'checkbox', checked: f.allDay, onchange: (e) => { f.allDay = e.target.checked; timeRow.style.display = f.allDay ? 'none' : ''; drawWhen(); } })),
+      whenNote),
     type === 'items' && el('div', {}, el('h2', { text: 'The list' }),
       el('p', { class: 'muted small', text: 'One per line. “x2” means two people can take it. Lines ending in a colon become headings. Start a line with a time (9:30-10:00) to make it a time slot.' }),
       itemsBox, preview),
@@ -218,7 +234,9 @@ async function editor(id, newType) {
     const closesAt = toIso(f.closeDate, f.closeTime || '20:00');
     if (!id && Date.parse(closesAt) < Date.now()) return bad('The closing time is in the past.');
     let when = null;
-    if (type !== 'poll' && f.date) when = f.start ? { allDay: false, start: toIso(f.date, f.start), ...(f.end ? { end: toIso(f.date, f.end) } : {}) } : { allDay: true, start: f.date };
+    if (type !== 'poll' && f.date && !f.allDay && !f.start) return bad('Please add a start time (including AM/PM), or turn on “All-day event.”');
+    if (type !== 'poll' && f.date && !f.allDay && f.end && f.end <= f.start) return bad('The end time is before the start time.');
+    if (type !== 'poll' && f.date) when = !f.allDay ? { allDay: false, start: toIso(f.date, f.start), ...(f.end ? { end: toIso(f.date, f.end) } : {}) } : { allDay: true, start: f.date };
     if (type === 'poll' && orig?.when) when = orig.when;
     const data = {
       type, title: f.title.trim(), slug, description: f.description.trim(), location: f.location.trim(), hostName: f.hostName.trim(), when,
